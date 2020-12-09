@@ -33,6 +33,36 @@ type bagRule struct {
 	holds []innerBag
 }
 
+func countChildrenHelper(bags map[string]*bagRule, bagName string, dp map[string]int) int {
+	topBag := bags[bagName]
+
+	// base case, if no children return 1 to denote a single bag
+	if len(topBag.holds) == 0 {
+		return 1
+	}
+
+	// if this bag has been counted before return the stored number
+	if val, ok := dp[bagName]; ok {
+		return val
+	}
+
+	// start the count at one to count the inner bag holding the others
+	count := 1
+	for _, bag := range topBag.holds {
+		count += bag.count * countChildrenHelper(bags, bag.name, dp)
+	}
+	// store the end result in case its needed again
+	dp[bagName] = count
+	return count
+}
+
+func countChildren(bags map[string]*bagRule, bagName string) int {
+	// use a map to hold the values of bags counted before
+	dp := make(map[string]int, len(bags))
+	// subtract by one to return the number of bags contained by the first bag, not the total bags present
+	return countChildrenHelper(bags, bagName, dp) - 1
+}
+
 func lineToBag(line string) (*bagRule, error) {
 	tokens := strings.Split(line, " ")
 
@@ -92,27 +122,6 @@ func main() {
 		lineNumber++
 	}
 
-	// this is a naive implementation, but it works.
-	// TODO
-	s := make(stack, 0)
-	s = stack.Push(s, startBag)
-	test := make([]innerBag, 0)
-	for len(s) != 0 {
-		// declare current and err here so we don't shadow s with :=
-		var current string
-		var err error
-		s, current, err = stack.Pop(s)
-		if err != nil {
-			fmt.Println(err)
-			continue
-		}
-		for _, childBag := range bagRules[current].holds {
-			for i := 0; i < childBag.count; i++ {
-				s = stack.Push(s, childBag.name)
-				test = append(test, childBag)
-			}
-		}
-	}
-
-	fmt.Printf("Count of bags that \"%s\" holds: %d\n", startBag, len(test))
+	res := countChildren(bagRules, startBag)
+	fmt.Printf("Count of bags that \"%s\" holds: %d\n", startBag, res)
 }
