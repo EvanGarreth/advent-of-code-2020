@@ -66,7 +66,7 @@ func lineToBag(line string) (*bagRule, error) {
 
 func main() {
 	if len(os.Args) != 4 {
-		fmt.Println("Usage: go run pt1.go <input_file> <bag>. A bag is an adjective and color separated by a space")
+		fmt.Println("Usage: go run pt2.go <input_file> <bag>. A bag is an adjective and color separated by a space")
 		os.Exit(1)
 	}
 
