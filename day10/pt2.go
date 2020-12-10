@@ -61,10 +61,16 @@ func main() {
 	// starting joltage and first neighbor are only reachable one way
 	dp[0] = 1
 	dp[1] = 1
+	// reachable 1 way unless within 3 of starting joltage.
+	// setting this allows the loop below to not have to check the value of i-3
+	dp[2] = 1
+	if joltages[0]+3 >= joltages[2] {
+		dp[2] = 2
+	}
 	// for each joltage, check the number of ways the previous 3 joltages were reachable and add that count
 	//  to the current joltage IFF the previous joltage to be checked can bridge the current joltage
 	// start at the first unknown value, index 2
-	for i := 2; i < len(joltages); i++ {
+	for i := 3; i < len(joltages); i++ {
 		// reduce current number by 3 to check if it is useable by any of the 3 previous values
 		numReach := joltages[i] - 3
 		if numReach <= joltages[i-1] {
@@ -73,7 +79,7 @@ func main() {
 		if numReach <= joltages[i-2] {
 			dp[i] += dp[i-2]
 		}
-		if i > 2 && numReach <= joltages[i-3] {
+		if numReach <= joltages[i-3] {
 			dp[i] += dp[i-3]
 		}
 	}
