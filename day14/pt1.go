@@ -16,15 +16,15 @@ type computer struct {
 }
 
 func (c *computer) updateMask(newMask string) {
-	// this mask will be AND'd with the
+	// this mask will be AND'd with the value when writing to force 0s
 	var setZeros int64 = 0xfffffffff
-	// unset all 36 bits, will be OR'd with the value to force ones
+	// unset all 36 bits, will be OR'd with the value when writing to force 1s
 	var setOnes int64 = 0
 	for i, bit := range newMask {
 		if bit == 'X' {
 			continue
 		}
-		// calculate the number of bits to shift to the left since we interate over the mask from high to low bits
+		// calculate the number of bits to shift to the left since we iterate over the mask from high to low bits
 		shift := len(newMask) - i - 1
 		if bit == '0' {
 			// unset the corresponding bit
@@ -72,8 +72,9 @@ func main() {
 			index := 7
 			c.updateMask(line[index:])
 		} else {
-			// the starting number for the address is always at index 4, so find the terminating "]" for the end
+			// the starting number for the address is always at index 4, so find the index of the terminating "]" for the end of the number
 			right := strings.Index(line, "]")
+			// convert to a 64 bit int since we use up to 36 bits
 			addr, _ := strconv.ParseInt(line[4:right], 10, 64)
 			// the starting point for the value is always + 2 from the equal sign and runs to the end of the string
 			left := strings.Index(line, "=") + 2
