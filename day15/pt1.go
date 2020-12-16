@@ -17,12 +17,12 @@ type game struct {
 
 func (g *game) play() {
 	num := g.prevNum
+	lastSeen := g.numbers[num]
 	age := 0
 	// 0 means that the previous round was the first time that number was played, so play a 0 this round
-	if g.numbers[num] == 0 {
+	if lastSeen == 0 {
 		age = 0
 	} else {
-		lastSeen := g.numbers[num]
 		// prevNum was last seen in the previous round, and directly before that, the round stored in numbers[]
 		age = (g.round - 1) - lastSeen
 	}
@@ -51,7 +51,7 @@ func main() {
 
 	game := &game{}
 	// arbitrary large number that can hold the values when running input.txt to 30000000 rounds
-	game.numbers = make([]int, 90000000)
+	game.numbers = make([]int, roundLimit)
 	game.maxRounds = roundLimit
 	game.prevNum = 0
 	game.round = 1
