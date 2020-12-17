@@ -1,0 +1,140 @@
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"os"
+	"strings"
+)
+
+func countOccupiedNeighbors(x int, y int, z int, layout [][][]bool) int {
+	countOccupied := 0
+	// check all 8 possible around (i,j) directions from (i-1,j-1) to (i+1,j+1)
+	for i := z - 1; i <= z+1; i++ {
+		if i < 0 || i >= len(layout) {
+			continue
+		}
+		for j := y - 1; j <= y+1; j++ {
+			// ignore positions outside of the layout
+			if j < 0 || j >= len(layout[0]) {
+				continue
+			}
+			for k := x - 1; k <= x+1; k++ {
+				if k < 0 || k >= len(layout[0][0]) || (i == z && j == y && k == x) {
+					continue
+				}
+				if layout[i][j][k] {
+					countOccupied++
+				}
+			}
+		}
+	}
+	return countOccupied
+}
+
+func getNextState(x int, y int, z int, layout [][][]bool, curState bool) bool {
+	occupiedNeighbors := countOccupiedNeighbors(x, y, z, layout)
+
+	if curState && (occupiedNeighbors == 2 || occupiedNeighbors == 3) {
+		return true
+	} else if !curState && occupiedNeighbors == 3 {
+		return true
+	}
+	return false
+}
+
+func copyLayout(src [][][]bool) [][][]bool {
+	dest := make([][][]bool, len(src))
+	for k := range src {
+		dest[k] = make([][]bool, len(src[k]))
+		for j := range src[k] {
+			dest[k][j] = make([]bool, len(src[k][j]))
+			for l := range src[k][j] {
+				dest[k][j][l] = src[k][j][l]
+			}
+		}
+	}
+	return dest
+}
+
+func main() {
+	const CYCLES = 6
+
+	if len(os.Args) != 2 {
+		fmt.Println("Usage: go run pt1.go <input_file>")
+		os.Exit(1)
+	}
+
+	fileName := os.Args[1]
+	file, err := os.Open(fileName)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	seatLayout := make([][][]bool, CYCLES*2)
+	scanner := bufio.NewScanner(file)
+	lineNo := 0
+	for scanner.Scan() {
+		line := scanner.Text()
+		curRow := make([]bool, len(line))
+		for i, char := range strings.Split(line, "") {
+			switch char {
+			case "#":
+				curRow[i] = true
+			case ".":
+				curRow[i] = false
+			default:
+				fmt.Println("unexpected character on line", lineNo, "col", i)
+				os.Exit(1)
+			}
+		}
+		if len(seatLayout[CYCLES]) == 0 {
+			seatLayout[CYCLES] = make([][]bool, 0)
+		}
+		seatLayout[CYCLES] = append(seatLayout[CYCLES], make([]bool, len(line)))
+		seatLayout[CYCLES][lineNo] = curRow
+		lineNo++
+	}
+
+	for j := range seatLayout {
+		if len(seatLayout[j]) == 0 {
+			seatLayout[j] = make([][]bool, len(seatLayout[CYCLES]))
+		}
+		for k := range seatLayout[j] {
+			if len(seatLayout[j][k]) == 0 {
+				seatLayout[j][k] = make([]bool, len(seatLayout[CYCLES][k]))
+			}
+		}
+	}
+
+	// create a workspace for building the next layout state
+	nextSeatLayout := copyLayout(seatLayout)
+	rounds := 0
+	countOccupied := 0
+	//stable := false
+	for rounds < 6 {
+		// assume this iteration will be stable unless proven otherwise
+		//stable = true
+		countOccupied = 0
+		for j := range seatLayout {
+			for k := range seatLayout[j] {
+				for l, state := range seatLayout[j][k] {
+					nextState := getNextState(l, k, j, seatLayout, state)
+					fmt.Println(j, k, l, nextState)
+
+					if nextState {
+						countOccupied++
+					}
+					nextSeatLayout[j][k][l] = nextState
+				}
+			}
+		}
+		fmt.Println()
+		seatLayout = copyLayout(nextSeatLayout)
+		rounds++
+		fmt.Println(rounds, seatLayout)
+	}
+	fmt.Println(seatLayout)
+	fmt.Printf("Took %d iterations to achieve stability with %d active states.\n", rounds-1, countOccupied)
+}
