@@ -40,9 +40,10 @@ func (s *stack) isEmpty() bool {
 	return len(s.s) == 0
 }
 
-func parseAndEval(line string) int {
+func parseAndEval(line string, precedence bool) int {
 	values := &stack{}
 	operators := &stack{}
+	// all tokens are single characters, so don't need to do any complicated scanning
 	for _, char := range line {
 		switch char {
 		case ' ':
@@ -51,6 +52,7 @@ func parseAndEval(line string) int {
 			operators.push(char)
 		case ')':
 			{
+				// have a full parenthesized expression, so evaluate it
 				for !operators.isEmpty() {
 					top := operators.peek()
 					if top == '(' {
@@ -62,9 +64,11 @@ func parseAndEval(line string) int {
 			}
 		case '+', '*':
 			{
+				// evaluate any ops we can on the stack before adding the new one
 				for !operators.isEmpty() {
-					top := operators.peek()
-					if top == ')' || top == '(' {
+					top := operators.peek().(rune)
+					// pt2 just adjusts precedence rules, so check that when adding a new op
+					if top == ')' || top == '(' || (precedence && !hasGreaterPrecedence(top, char)) {
 						break
 					}
 					eval(operators, values)
@@ -81,10 +85,25 @@ func parseAndEval(line string) int {
 			values.push(val)
 		}
 	}
+	// eval anything that remains
 	for !operators.isEmpty() {
 		eval(operators, values)
 	}
 	return values.s[0].(int)
+}
+
+func hasGreaterPrecedence(curOp rune, nextOp rune) bool {
+	// assume multiplication (lower precedence)
+	curOpPrec := 0
+	nextOpPrec := 0
+	// adjust if either are addition
+	if curOp == '+' {
+		curOpPrec = 1
+	}
+	if nextOp == '+' {
+		nextOpPrec = 1
+	}
+	return curOpPrec > nextOpPrec
 }
 
 func eval(operators *stack, values *stack) {
@@ -118,10 +137,13 @@ func main() {
 	}
 
 	sum1 := 0
+	sum2 := 0
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		line := scanner.Text()
-		sum1 += parseAndEval(line)
+		sum1 += parseAndEval(line, false)
+		sum2 += parseAndEval(line, true)
 	}
 	fmt.Println(sum1)
+	fmt.Println(sum2)
 }
